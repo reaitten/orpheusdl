@@ -114,8 +114,6 @@ def tag_file(file_path: str, image_path: str, track_info: TrackInfo, credits_lis
     if track_info.explicit is not None:
         if container == ContainerEnum.m4a:
             tagger['explicit'] = b'\x01' if track_info.explicit else b'\x02'
-        # elif container == ContainerEnum.mp3:
-        #     tagger['Rating'] = 'Explicit' if track_info.explicit else 'Clean'
         else:
             tagger['Rating'] = 'Explicit' if track_info.explicit else 'Clean'
     
@@ -141,7 +139,7 @@ def tag_file(file_path: str, image_path: str, track_info: TrackInfo, credits_lis
         elif container == ContainerEnum.m4a:
             # only works with MP3TAG? https://docs.mp3tag.de/mapping/
             tagger.RegisterTextKey('label', '----:com.apple.itunes:LABEL')
-            tagger['label'] = track_info.tags.label
+            tagger['label'] = track_info.tags.label.encode()
 
     # add the description tag
     if track_info.tags.description and container == ContainerEnum.m4a:
