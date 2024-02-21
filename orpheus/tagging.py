@@ -51,6 +51,8 @@ def tag_file(file_path: str, image_path: str, track_info: TrackInfo, credits_lis
         tagger.RegisterTextKey('explicit', 'rtng') if track_info.explicit is not None else None
         tagger.RegisterTextKey('covr', 'covr')
         tagger.RegisterTextKey('lyrics', '\xa9lyr') if embedded_lyrics else None
+        tagger.RegisterTextKey('composer', '\xa9wrt') if track_info.tags.composer else None
+        tagger.RegisterTextKey('genre', '\xa9gen') if track_info.tags.genres else None
     else:
         raise Exception('Unknown container for tagging')
 
@@ -66,11 +68,13 @@ def tag_file(file_path: str, image_path: str, track_info: TrackInfo, credits_lis
             del tagger.tags['encoder']
 
     tagger['title'] = track_info.name
-    if track_info.album: tagger['album'] = track_info.album
-    if track_info.tags.album_artist: tagger['albumartist'] = track_info.tags.album_artist
+    if track_info.album:
+        tagger['album'] = track_info.album
+    if track_info.tags.album_artist:
+        tagger['albumartist'] = track_info.tags.album_artist
 
     tagger['artist'] = track_info.artists
-
+    
     if container == ContainerEnum.m4a or container == ContainerEnum.mp3:
         if track_info.tags.track_number and track_info.tags.total_tracks:
             tagger['tracknumber'] = str(track_info.tags.track_number) + '/' + str(track_info.tags.total_tracks)
@@ -81,10 +85,14 @@ def tag_file(file_path: str, image_path: str, track_info: TrackInfo, credits_lis
         elif track_info.tags.disc_number:
             tagger['discnumber'] = str(track_info.tags.disc_number)
     else:
-        if track_info.tags.track_number: tagger['tracknumber'] = str(track_info.tags.track_number)
-        if track_info.tags.disc_number: tagger['discnumber'] = str(track_info.tags.disc_number)
-        if track_info.tags.total_tracks: tagger['totaltracks'] = str(track_info.tags.total_tracks)
-        if track_info.tags.total_discs: tagger['totaldiscs'] = str(track_info.tags.total_discs)
+        if track_info.tags.track_number:
+            tagger['tracknumber'] = str(track_info.tags.track_number)
+        if track_info.tags.disc_number:
+            tagger['discnumber'] = str(track_info.tags.disc_number)
+        if track_info.tags.total_tracks:
+            tagger['totaltracks'] = str(track_info.tags.total_tracks)
+        if track_info.tags.total_discs:
+            tagger['totaldiscs'] = str(track_info.tags.total_discs)
 
     if track_info.tags.release_date:
         if container == ContainerEnum.mp3:
@@ -100,19 +108,26 @@ def tag_file(file_path: str, image_path: str, track_info: TrackInfo, credits_lis
     else:
         tagger['date'] = str(track_info.release_year)
 
-    if track_info.tags.copyright:tagger['copyright'] = track_info.tags.copyright
+    if track_info.tags.copyright:
+        tagger['copyright'] = track_info.tags.copyright
 
     if track_info.explicit is not None:
         if container == ContainerEnum.m4a:
             tagger['explicit'] = b'\x01' if track_info.explicit else b'\x02'
-        elif container == ContainerEnum.mp3:
-            tagger['Rating'] = 'Explicit' if track_info.explicit else 'Clean'
+        # elif container == ContainerEnum.mp3:
+        #     tagger['Rating'] = 'Explicit' if track_info.explicit else 'Clean'
         else:
             tagger['Rating'] = 'Explicit' if track_info.explicit else 'Clean'
+    
+    if track_info.tags.composer and container in (ContainerEnum.m4a, ContainerEnum.flac):
+        tagger['composer'] = track_info.tags.composer
 
-    if track_info.tags.genres: tagger['genre'] = track_info.tags.genres
-    if track_info.tags.isrc: tagger['isrc'] = track_info.tags.isrc.encode() if container == ContainerEnum.m4a else track_info.tags.isrc
-    if track_info.tags.upc: tagger['UPC'] = track_info.tags.upc.encode() if container == ContainerEnum.m4a else track_info.tags.upc
+    if track_info.tags.genres:
+        tagger['genre'] = track_info.tags.genres
+    if track_info.tags.isrc:
+        tagger['ISRC'] = track_info.tags.isrc.encode() if container == ContainerEnum.m4a else track_info.tags.isrc
+    if track_info.tags.upc:
+        tagger['UPC'] = track_info.tags.upc.encode() if container == ContainerEnum.m4a else track_info.tags.upc
 
     # add the label tag
     if track_info.tags.label:
@@ -125,12 +140,12 @@ def tag_file(file_path: str, image_path: str, track_info: TrackInfo, credits_lis
             )
         elif container == ContainerEnum.m4a:
             # only works with MP3TAG? https://docs.mp3tag.de/mapping/
-            tagger.RegisterTextKey('label', '\xa9pub')
+            tagger.RegisterTextKey('label', '----:com.apple.itunes:LABEL')
             tagger['label'] = track_info.tags.label
 
     # add the description tag
     if track_info.tags.description and container == ContainerEnum.m4a:
-        tagger.RegisterTextKey('desc', 'description')
+        tagger.RegisterTextKey('description', 'desc')
         tagger['description'] = track_info.tags.description
 
     # add comment tag
